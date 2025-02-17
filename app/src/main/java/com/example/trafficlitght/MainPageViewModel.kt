@@ -19,11 +19,12 @@ class MainPageViewModel : ViewModel() {
 }
 
 class TrafficLight() {
-    private var _state = MutableStateFlow(TrafficLightState.Red)
+    private var _state = MutableStateFlow(TrafficLightState.RedForDriver_RedForWallker_AfterDriver)
     var state: StateFlow<TrafficLightState> = _state.asStateFlow()
 
-    private var _timerCount = MutableStateFlow(10)
+    private var _timerCount = MutableStateFlow(2)
     var timerCount = _timerCount.asStateFlow()
+
 
     private var timer: CountDownTimer? = null
     fun startTimer() {
@@ -44,17 +45,23 @@ class TrafficLight() {
 
     fun nextState(){
         _state.value = when (_state.value) {
-            TrafficLightState.Red -> {
-                TrafficLightState.YellowAndRed
+            TrafficLightState.RedForDriver_RedForWallker_AfterDriver -> {
+                TrafficLightState.RedForDriver_GreenForWallker
             }
-            TrafficLightState.YellowAndRed -> {
-                TrafficLightState.Green
+            TrafficLightState.RedForDriver_GreenForWallker -> {
+                TrafficLightState.RedForDriver_RedForWallker_AfterWallker
             }
-            TrafficLightState.Green -> {
-                TrafficLightState.Yellow
+            TrafficLightState.RedForDriver_RedForWallker_AfterWallker -> {
+                TrafficLightState.RedAndYellowForDriver_RedForWallker
             }
-            TrafficLightState.Yellow -> {
-                TrafficLightState.Red
+            TrafficLightState.RedAndYellowForDriver_RedForWallker -> {
+                TrafficLightState.GreenForDriver_RedForWallker
+            }
+            TrafficLightState.GreenForDriver_RedForWallker -> {
+                TrafficLightState.YellowForDriver_RedForWallker
+            }
+            TrafficLightState.YellowForDriver_RedForWallker -> {
+                TrafficLightState.RedForDriver_RedForWallker_AfterDriver
             }
         }
         _timerCount.value = stateToDuration.getOrDefault(_state.value, 1)
@@ -65,18 +72,22 @@ class TrafficLight() {
     }
 
     enum class TrafficLightState {
-        Red,
-        Yellow,
-        Green,
-        YellowAndRed
+        RedForDriver_RedForWallker_AfterDriver,
+        RedForDriver_GreenForWallker,
+        RedForDriver_RedForWallker_AfterWallker,
+        RedAndYellowForDriver_RedForWallker,
+        GreenForDriver_RedForWallker,
+        YellowForDriver_RedForWallker
     }
 
     private val stateToDuration: Map<TrafficLightState, Int> =
         mapOf(
-            TrafficLightState.Red to 10,
-            TrafficLightState.YellowAndRed to 2,
-            TrafficLightState.Yellow to 2,
-            TrafficLightState.Green to 6
+            TrafficLightState.RedForDriver_RedForWallker_AfterDriver to 3,
+            TrafficLightState.RedForDriver_GreenForWallker to 12,
+            TrafficLightState.RedForDriver_RedForWallker_AfterWallker to 3,
+            TrafficLightState.RedAndYellowForDriver_RedForWallker to 2,
+            TrafficLightState.GreenForDriver_RedForWallker to 10,
+            TrafficLightState.YellowForDriver_RedForWallker to 2
         )
 
 }
