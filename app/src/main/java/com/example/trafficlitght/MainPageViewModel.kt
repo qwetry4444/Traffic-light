@@ -2,6 +2,7 @@ package com.example.trafficlitght
 
 import android.os.Bundle
 import android.os.CountDownTimer
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
 import androidx.core.os.bundleOf
@@ -16,6 +17,7 @@ class MainPageViewModel : ViewModel() {
 
     val trafficLightState: StateFlow<TrafficLight.TrafficLightState> = trafficLight.state
     val trafficLightTimerCount = trafficLight.timerCount
+    val buttonToCrossState = trafficLight.isButtonPressed
 }
 
 class TrafficLight() {
@@ -24,6 +26,9 @@ class TrafficLight() {
 
     private var _timerCount = MutableStateFlow(2)
     var timerCount = _timerCount.asStateFlow()
+
+    private var _isButtonPressed = MutableStateFlow(false)
+    var isButtonPressed: StateFlow<Boolean> = _isButtonPressed.asStateFlow()
 
 
     private var timer: CountDownTimer? = null
@@ -40,6 +45,10 @@ class TrafficLight() {
                 startTimer()
             }
         }.start()
+    }
+
+    fun handleButtonPress() {
+        _isButtonPressed.value = true
     }
 
 
@@ -70,6 +79,8 @@ class TrafficLight() {
     init {
         startTimer()
     }
+
+
 
     enum class TrafficLightState {
         RedForDriver_RedForWallker_AfterDriver,

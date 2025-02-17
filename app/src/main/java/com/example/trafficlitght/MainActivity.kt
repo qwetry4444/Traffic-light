@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -57,6 +58,7 @@ fun MainScreen(){
 fun TrafficLightScreen(mainPageViewModel: MainPageViewModel = viewModel()) {
     val trafficLightState = mainPageViewModel.trafficLightState.collectAsState()
     val trafficLightTimerCount = mainPageViewModel.trafficLightTimerCount.collectAsState()
+    val buttonToCrossState = mainPageViewModel.buttonToCrossState.collectAsState()
 
     Column(
         modifier = Modifier
@@ -108,6 +110,8 @@ fun TrafficLightScreen(mainPageViewModel: MainPageViewModel = viewModel()) {
 
         if (trafficLightState.value == TrafficLight.TrafficLightState.RedForDriver_GreenForWallker)
             Text(text = (trafficLightTimerCount.value + 1).toString(), fontSize = 32.sp, color = Color.White)
+
+        ButtonToCross(buttonToCrossState.value, mainPageViewModel.)
     }
 }
 
@@ -116,6 +120,27 @@ fun TrafficLightCell(lightColor: Color, trafficLightType: TrafficLightType, isAc
     Canvas(modifier = Modifier.size(if(trafficLightType == TrafficLightType.Drivers) 100.dp else 60.dp)) {
         drawCircle(color = if (isActive()) lightColor else Color.Gray)
     }
+}
+
+@Composable
+fun ButtonToCross(isButtonActive: Boolean, handleButtonPress: () -> Unit){
+    Column {
+        Button(
+            onClick = handleButtonPress,
+            modifier = TODO(),
+            enabled = TODO(),
+            shape = TODO(),
+            colors = TODO(),
+            elevation = TODO(),
+            border = TODO()
+        ) {
+            Canvas(modifier = Modifier.size(50.dp)) {
+                drawCircle(color = Color.Black)
+            }
+        }
+        Text(text = "Подождите", color = if (isButtonActive) Color.Yellow else Color.Black)
+    }
+
 }
 
 @Composable
