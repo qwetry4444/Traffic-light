@@ -15,10 +15,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Shapes
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -26,7 +24,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -63,25 +60,70 @@ fun TrafficLightScreen(mainPageViewModel: MainPageViewModel = viewModel()) {
 
     Column(
         modifier = Modifier
+            .clip(shape = RoundedCornerShape(percent = 20))
+            .background(Color.Black)
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically)
+    ) {
+        TrafficLightCell(Color.Red, TrafficLightType.Drivers)
+        { trafficLightState.value in arrayOf(
+            TrafficLight.TrafficLightState.RedForDriver_GreenForWallker,
+            TrafficLight.TrafficLightState.RedAndYellowForDriver_RedForWallker,
+            TrafficLight.TrafficLightState.RedForDriver_RedForWallker_AfterDriver,
+            TrafficLight.TrafficLightState.RedForDriver_RedForWallker_AfterWallker)
+        }
+        TrafficLightCell(Color.Yellow, TrafficLightType.Drivers)
+        { trafficLightState.value in arrayOf(
+            TrafficLight.TrafficLightState.YellowForDriver_RedForWallker,
+            TrafficLight.TrafficLightState.RedAndYellowForDriver_RedForWallker)
+        }
+        TrafficLightCell(Color.Green, TrafficLightType.Drivers)
+        { trafficLightState.value == TrafficLight.TrafficLightState.GreenForDriver_RedForWallker }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Text(text = (trafficLightTimerCount.value + 1).toString(), fontSize = 32.sp, color = Color.White)
+    }
+    
+    Spacer(modifier = Modifier.width(32.dp))
+
+    Column(modifier = Modifier
         .clip(shape = RoundedCornerShape(percent = 20))
         .background(Color.Black)
         .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically)
     ) {
-        TrafficLightCell(Color.Red) { trafficLightState.value in arrayOf(TrafficLight.TrafficLightState.Red, TrafficLight.TrafficLightState.YellowAndRed) }
-        TrafficLightCell(Color.Yellow) { trafficLightState.value in arrayOf(TrafficLight.TrafficLightState.Yellow, TrafficLight.TrafficLightState.YellowAndRed) }
-        TrafficLightCell(Color.Green) { trafficLightState.value == TrafficLight.TrafficLightState.Green }
-        
-        Spacer(modifier = Modifier.height(12.dp))
-        
-        Text(text = (trafficLightTimerCount.value + 1).toString(), fontSize = 32.sp, color = Color.White)
+        TrafficLightCell(Color.Red, TrafficLightType.Walkers)
+        { trafficLightState.value in arrayOf(
+            TrafficLight.TrafficLightState.RedAndYellowForDriver_RedForWallker,
+            TrafficLight.TrafficLightState.RedForDriver_RedForWallker_AfterDriver,
+            TrafficLight.TrafficLightState.RedForDriver_RedForWallker_AfterWallker,
+            TrafficLight.TrafficLightState.GreenForDriver_RedForWallker,
+            TrafficLight.TrafficLightState.YellowForDriver_RedForWallker)
+        }
+        TrafficLightCell(Color.Green, TrafficLightType.Walkers)
+        { trafficLightState.value == TrafficLight.TrafficLightState.RedForDriver_GreenForWallker }
+
+        if (trafficLightState.value == TrafficLight.TrafficLightState.RedForDriver_GreenForWallker)
+            Text(text = (trafficLightTimerCount.value + 1).toString(), fontSize = 32.sp, color = Color.White)
     }
 }
 
 @Composable
-fun TrafficLightCell(lightColor: Color, isActive: () -> Boolean){
-    Canvas(modifier = Modifier.size(100.dp)) {
+fun TrafficLightCell(lightColor: Color, trafficLightType: TrafficLightType, isActive: () -> Boolean){
+    Canvas(modifier = Modifier.size(if(trafficLightType == TrafficLightType.Drivers) 100.dp else 60.dp)) {
         drawCircle(color = if (isActive()) lightColor else Color.Gray)
     }
+}
+
+@Composable
+fun TrafficLightForDrivers(){
+
+}
+
+enum class TrafficLightType{
+    Drivers,
+    Walkers
 }
