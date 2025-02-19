@@ -1,41 +1,75 @@
 package com.example.trafficlitght
 
-import android.os.Bundle
 import android.os.CountDownTimer
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.graphics.Color
-import androidx.core.os.bundleOf
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlin.time.times
 
 class MainPageViewModel : ViewModel() {
     private val trafficLight = TrafficLight()
 
-    val trafficLightState: StateFlow<TrafficLight.TrafficLightState> = trafficLight.state
+    val trafficLightState = trafficLight.state
     val trafficLightTimerCount = trafficLight.timerCount
     val buttonToCrossState = trafficLight.isButtonPressed
+
+    fun handleButtonToCrossPress() {
+        trafficLight.handleButtonPress()
+    }
 }
 
-class TrafficLight() {
-    private var _state = MutableStateFlow(TrafficLightState.RedForDriver_RedForWallker_AfterDriver)
-    var state: StateFlow<TrafficLightState> = _state.asStateFlow()
+class TrafficLight {
+    enum class TrafficLightState(val duration: Int) {
+        GreenForDriver_RedForWalker_ButtonNotPressed(60),
+        YellowForDriver_RedForWalker_ButtonNotPressed(2),
+        GreenForDriver_RedForWalker_ButtonPressed(6),
+        YellowForDriver_RedForWalker_ButtonPressed(2),
+        RedForDriver_RedForWalker_AfterDriver(2),
+        RedForDriver_GreenForWalker(10),
+        RedForDriver_RedForWalker_AfterWaker(2),
+        RedAndYellowForDriver_RedForWalker(2),
+        GreenForDriver_RedForWalker_ButtonTurnOff(8);
 
-    private var _timerCount = MutableStateFlow(2)
-    var timerCount = _timerCount.asStateFlow()
+        fun nextState(isButtonPressed: Boolean): TrafficLightState {
+            return when (this) {
+                GreenForDriver_RedForWalker_ButtonNotPressed -> YellowForDriver_RedForWalker_ButtonNotPressed
+                YellowForDriver_RedForWalker_ButtonNotPressed -> RedForDriver_RedForWalker_AfterDriver
+                GreenForDriver_RedForWalker_ButtonPressed -> YellowForDriver_RedForWalker_ButtonPressed
+                YellowForDriver_RedForWalker_ButtonPressed -> RedForDriver_RedForWalker_AfterDriver
+                RedForDriver_RedForWalker_AfterDriver -> RedForDriver_GreenForWalker
+                RedForDriver_GreenForWalker -> RedForDriver_RedForWalker_AfterWaker
+                RedForDriver_RedForWalker_AfterWaker -> RedAndYellowForDriver_RedForWalker
+                RedAndYellowForDriver_RedForWalker -> GreenForDriver_RedForWalker_ButtonTurnOff
+                GreenForDriver_RedForWalker_ButtonTurnOff -> {
+                    if (isButtonPressed) GreenForDriver_RedForWalker_ButtonPressed
+                    else GreenForDriver_RedForWalker_ButtonNotPressed
+                }
+            }
+        }
+    }
 
-    private var _isButtonPressed = MutableStateFlow(false)
-    var isButtonPressed: StateFlow<Boolean> = _isButtonPressed.asStateFlow()
+    private val _state = MutableStateFlow(TrafficLightState.GreenForDriver_RedForWalker_ButtonTurnOff)
+    val state: StateFlow<TrafficLightState> = _state.asStateFlow()
 
+    private val _timerCount = MutableStateFlow(_state.value.duration)
+    val timerCount: StateFlow<Int> = _timerCount.asStateFlow()
+
+    private val _isButtonPressed = MutableStateFlow(false)
+    val isButtonPressed: StateFlow<Boolean> = _isButtonPressed.asStateFlow()
 
     private var timer: CountDownTimer? = null
+
+    init {
+        startTimer()
+    }
+
     fun startTimer() {
         timer?.cancel()
 
-        timer = object : CountDownTimer((_timerCount.value * 1000).toLong(), 10) {
+        val duration = _state.value.duration * 1000L
+        _timerCount.value = _state.value.duration
+
+        timer = object : CountDownTimer(duration, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 _timerCount.value = (millisUntilFinished / 1000).toInt()
             }
@@ -49,57 +83,18 @@ class TrafficLight() {
 
     fun handleButtonPress() {
         _isButtonPressed.value = true
-    }
-
-
-    fun nextState(){
-        _state.value = when (_state.value) {
-            TrafficLightState.RedForDriver_RedForWallker_AfterDriver -> {
-                TrafficLightState.RedForDriver_GreenForWallker
-            }
-            TrafficLightState.RedForDriver_GreenForWallker -> {
-                TrafficLightState.RedForDriver_RedForWallker_AfterWallker
-            }
-            TrafficLightState.RedForDriver_RedForWallker_AfterWallker -> {
-                TrafficLightState.RedAndYellowForDriver_RedForWallker
-            }
-            TrafficLightState.RedAndYellowForDriver_RedForWallker -> {
-                TrafficLightState.GreenForDriver_RedForWallker
-            }
-            TrafficLightState.GreenForDriver_RedForWallker -> {
-                TrafficLightState.YellowForDriver_RedForWallker
-            }
-            TrafficLightState.YellowForDriver_RedForWallker -> {
-                TrafficLightState.RedForDriver_RedForWallker_AfterDriver
-            }
+        if (_state.value == TrafficLightState.GreenForDriver_RedForWalker_ButtonNotPressed) {
+            _state.value = TrafficLightState.GreenForDriver_RedForWalker_ButtonPressed
+            startTimer()
         }
-        _timerCount.value = stateToDuration.getOrDefault(_state.value, 1)
     }
 
-    init {
-        startTimer()
+    fun nextState() {
+        _state.value = _state.value.nextState(_isButtonPressed.value)
+
+        if (_state.value == TrafficLightState.RedForDriver_GreenForWalker) {
+            _isButtonPressed.value = false
+        }
     }
-
-
-
-    enum class TrafficLightState {
-        RedForDriver_RedForWallker_AfterDriver,
-        RedForDriver_GreenForWallker,
-        RedForDriver_RedForWallker_AfterWallker,
-        RedAndYellowForDriver_RedForWallker,
-        GreenForDriver_RedForWallker,
-        YellowForDriver_RedForWallker
-    }
-
-    private val stateToDuration: Map<TrafficLightState, Int> =
-        mapOf(
-            TrafficLightState.RedForDriver_RedForWallker_AfterDriver to 3,
-            TrafficLightState.RedForDriver_GreenForWallker to 12,
-            TrafficLightState.RedForDriver_RedForWallker_AfterWallker to 3,
-            TrafficLightState.RedAndYellowForDriver_RedForWallker to 2,
-            TrafficLightState.GreenForDriver_RedForWallker to 10,
-            TrafficLightState.YellowForDriver_RedForWallker to 2
-        )
-
 }
 

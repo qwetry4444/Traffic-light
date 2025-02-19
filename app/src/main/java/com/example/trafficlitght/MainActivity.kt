@@ -70,18 +70,24 @@ fun TrafficLightScreen(mainPageViewModel: MainPageViewModel = viewModel()) {
     ) {
         TrafficLightCell(Color.Red, TrafficLightType.Drivers)
         { trafficLightState.value in arrayOf(
-            TrafficLight.TrafficLightState.RedForDriver_GreenForWallker,
-            TrafficLight.TrafficLightState.RedAndYellowForDriver_RedForWallker,
-            TrafficLight.TrafficLightState.RedForDriver_RedForWallker_AfterDriver,
-            TrafficLight.TrafficLightState.RedForDriver_RedForWallker_AfterWallker)
+            TrafficLight.TrafficLightState.RedForDriver_RedForWalker_AfterDriver,
+            TrafficLight.TrafficLightState.RedForDriver_GreenForWalker,
+            TrafficLight.TrafficLightState.RedForDriver_RedForWalker_AfterWaker,
+            TrafficLight.TrafficLightState.RedAndYellowForDriver_RedForWalker)
         }
         TrafficLightCell(Color.Yellow, TrafficLightType.Drivers)
         { trafficLightState.value in arrayOf(
-            TrafficLight.TrafficLightState.YellowForDriver_RedForWallker,
-            TrafficLight.TrafficLightState.RedAndYellowForDriver_RedForWallker)
+            TrafficLight.TrafficLightState.YellowForDriver_RedForWalker_ButtonNotPressed,
+            TrafficLight.TrafficLightState.RedAndYellowForDriver_RedForWalker,
+            TrafficLight.TrafficLightState.YellowForDriver_RedForWalker_ButtonPressed)
         }
         TrafficLightCell(Color.Green, TrafficLightType.Drivers)
-        { trafficLightState.value == TrafficLight.TrafficLightState.GreenForDriver_RedForWallker }
+        {  trafficLightState.value in arrayOf(
+            TrafficLight.TrafficLightState.GreenForDriver_RedForWalker_ButtonNotPressed,
+            TrafficLight.TrafficLightState.GreenForDriver_RedForWalker_ButtonTurnOff,
+            TrafficLight.TrafficLightState.GreenForDriver_RedForWalker_ButtonPressed
+            )
+        }
 
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -90,28 +96,27 @@ fun TrafficLightScreen(mainPageViewModel: MainPageViewModel = viewModel()) {
     
     Spacer(modifier = Modifier.width(32.dp))
 
-    Column(modifier = Modifier
-        .clip(shape = RoundedCornerShape(percent = 20))
-        .background(Color.Black)
-        .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically)
-    ) {
-        TrafficLightCell(Color.Red, TrafficLightType.Walkers)
-        { trafficLightState.value in arrayOf(
-            TrafficLight.TrafficLightState.RedAndYellowForDriver_RedForWallker,
-            TrafficLight.TrafficLightState.RedForDriver_RedForWallker_AfterDriver,
-            TrafficLight.TrafficLightState.RedForDriver_RedForWallker_AfterWallker,
-            TrafficLight.TrafficLightState.GreenForDriver_RedForWallker,
-            TrafficLight.TrafficLightState.YellowForDriver_RedForWallker)
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(modifier = Modifier
+            .clip(shape = RoundedCornerShape(percent = 20))
+            .background(Color.Black)
+            .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically)
+        ) {
+            TrafficLightCell(Color.Red, TrafficLightType.Walkers)
+            { trafficLightState.value != TrafficLight.TrafficLightState.RedForDriver_GreenForWalker
+            }
+            TrafficLightCell(Color.Green, TrafficLightType.Walkers)
+            { trafficLightState.value == TrafficLight.TrafficLightState.RedForDriver_GreenForWalker }
+
+            if (trafficLightState.value == TrafficLight.TrafficLightState.RedForDriver_GreenForWalker)
+                Text(text = (trafficLightTimerCount.value + 1).toString(), fontSize = 32.sp, color = Color.White)
         }
-        TrafficLightCell(Color.Green, TrafficLightType.Walkers)
-        { trafficLightState.value == TrafficLight.TrafficLightState.RedForDriver_GreenForWallker }
-
-        if (trafficLightState.value == TrafficLight.TrafficLightState.RedForDriver_GreenForWallker)
-            Text(text = (trafficLightTimerCount.value + 1).toString(), fontSize = 32.sp, color = Color.White)
-
-        ButtonToCross(buttonToCrossState.value, mainPageViewModel.)
+        
+        Spacer(modifier = Modifier.height(12.dp))
+        
+        ButtonToCross(buttonToCrossState.value, mainPageViewModel::handleButtonToCrossPress)
     }
 }
 
@@ -126,27 +131,20 @@ fun TrafficLightCell(lightColor: Color, trafficLightType: TrafficLightType, isAc
 fun ButtonToCross(isButtonActive: Boolean, handleButtonPress: () -> Unit){
     Column {
         Button(
-            onClick = handleButtonPress,
-            modifier = TODO(),
-            enabled = TODO(),
-            shape = TODO(),
-            colors = TODO(),
-            elevation = TODO(),
-            border = TODO()
+            onClick = handleButtonPress
         ) {
-            Canvas(modifier = Modifier.size(50.dp)) {
-                drawCircle(color = Color.Black)
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(6.dp)) {
+                Canvas(modifier = Modifier.size(50.dp)) {
+                    drawCircle(color = Color.Black)
+                }
+                Text(text = "Подождите", color = if (isButtonActive) Color.Yellow else Color.Black, fontSize = 22.sp)
             }
         }
-        Text(text = "Подождите", color = if (isButtonActive) Color.Yellow else Color.Black)
+
     }
 
 }
 
-@Composable
-fun TrafficLightForDrivers(){
-
-}
 
 enum class TrafficLightType{
     Drivers,
